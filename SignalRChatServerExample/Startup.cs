@@ -36,7 +36,7 @@ namespace SignalRChatServerExample
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<ChatHub>("/chatHub");
+                endpoints.MapHub<ChatHub>("/chathub");
             });
         }
     }

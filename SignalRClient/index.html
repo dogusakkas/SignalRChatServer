@@ -3,29 +3,65 @@
 
 <head>
     <title>SignalR</title>
-    <script src="scripts/jquery.signalR.min.js"></script>
+    <script src="scripts/signalr.min.js"></script>
     <script src="scripts/jquery.min.js"></script>
     <script src="scripts/bootstrap.min.js"></script>
 
+
     <link rel="stylesheet" href="styles/bootstrap.min.css">
+    <link rel="stylesheet" href="styles/style.css">
 
     <script>
         $(document).ready(() => {
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("https://localhost:44378/chathub")
+                .build();
+
+            connection.start();
+
             $(".disabled").attr("disabled", "disabled");
 
-            $(".users").click(function () {
+            $("body").on("click", ".users", function () {
                 $(".users").each((index, item) => {
                     item.classList.remove("active");
                 });
                 $(this).addClass("active");
+            });
+
+            $("#btnGirisYap").click(() => {
+                const nickName = $("#txtNickName").val();
+                connection.invoke("GetNickName", nickName).catch(error => console.log(error));
+                $(".disabled").removeAttr("disabled");
+            });
+
+            connection.on("clientJoined", nickName => {
+                $("#clientDurumMesajlari").html(`${nickName} giriş yaptı`);
+                $("#clientDurumMesajlari").fadeIn(2000, () => {
+                    setTimeout(() => {
+                        $("#clientDurumMesajlari").fadeOut(2000);
+                    }, 2000)
+                });
+            });
+
+            connection.on("clients", clients => {
+
+                $("#_clients").html("");
+                $.each(clients, (index, item) => {
+                    const user = $(".users").first().clone();
+                    user.removeClass("active");
+                    user.html(item.nickName);
+                    $("#_clients").append(user);
+
+                })
             })
 
-            $("#btnGonder").click(() => {
-                var x = $(".message").clone();
-                x.removeClass("message");
-                x.find("h5")[1].innerHTML = ""; // Ahmeti gösterir
-                x.find("h5")[0].innerHTML = ""; // Seni gösterir
-            })
+            // $("#btnGonder").click(() => {
+            //     var x = $(".message").clone();
+            //     x.removeClass("message");
+            //     x.find("h5")[1].innerHTML = ""; // Ahmeti gösterir
+            //     x.find("h5")[0].innerHTML = ""; // Seni gösterir
+            // })
         })
     </script>
 </head>
@@ -39,7 +75,7 @@
                 <div class="col-md-3">
                     <!-- Oda -->
                     <input class="form-control form-control-lg disabled" type="text" placeholder="Oda Adı">
-                    <button type="button" class="btn btn-info rightButton disabled">Oda Oluştur</button>
+                    <button type="button" class="btn btn-info rightButton disabled mb-2">Oda Oluştur</button>
                     <select size="5" style="width: 100%;" class="form-select disabled" multiple>
                         <option selected value="-1">Odalar</option>
                     </select>
@@ -47,17 +83,16 @@
                     <!-- Oda -->
                     <br><br><br>
                     <!-- Clientlar -->
-                    <div class="list-group">
+                    <div class="list-group clients">
                         <a class="list-group-item list-group-item-action users active">
                             Tümü
                         </a>
-                        <a class="list-group-item list-group-item-action users" aria-current="true">
-                            Cras justo odio
-                        </a>
+                        <div id="_clients"></div>
                     </div>
                     <!-- Clientlar -->
                 </div>
                 <div class="col-md-6">
+                    <div class="alert alert-success" id="clientDurumMesajlari" style="display: none;"></div>
                     <!-- Mesajlaşma -->
                     <textarea class="form-control" style="margin-top: 5px;"
                         placeholder="İletilecek mesajı buraya giriniz..." rows="3"></textarea>
@@ -79,8 +114,8 @@
                     <!-- Mesajlaşma -->
                 </div>
                 <div class="col-md-3">
-                    <input class="form-control form-control-lg" type="text" placeholder="Adınız">
-                    <button type="button" class="btn btn-success leftButton">Giriş Yap</button>
+                    <input class="form-control form-control-lg" type="text" placeholder="Adınız" id="txtNickName">
+                    <button type="button" class="btn btn-success leftButton" id="btnGirisYap">Giriş Yap</button>
                 </div>
             </div>
         </div>
