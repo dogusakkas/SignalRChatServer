@@ -1,3 +1,7 @@
-.users, .room{
+.users{
+    cursor: pointer;
+}
+
+button{
     cursor: pointer;
 }

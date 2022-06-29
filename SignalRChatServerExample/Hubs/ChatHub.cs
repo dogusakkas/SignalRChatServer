@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using SignalRChatServerExample.Data;
 using SignalRChatServerExample.Models;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -40,10 +41,43 @@ namespace SignalRChatServerExample.Hubs
         public async Task AddGroup(string groupName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            GroupSource.Groups.Add(new Group { GroupName = groupName });
+
+            Group group = new Group { GroupName = groupName };
+            group.Clients.Add(ClientSource.Clients.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId));
+
+            GroupSource.Groups.Add(group);
 
             await Clients.All.SendAsync("groups", GroupSource.Groups);
 
+        }
+
+        public async Task AddClientToGroup(IEnumerable<string> groupNames)
+        {
+            Client client = ClientSource.Clients.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            foreach (var group in groupNames)
+            {
+                Group _group = GroupSource.Groups.FirstOrDefault(x => x.GroupName == group);
+
+                var result = _group.Clients.Any(x => x.ConnectionId == Context.ConnectionId);
+
+                if (!result)
+                {
+                    _group.Clients.Add(client);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, group);
+                }
+            }
+        }
+
+        public async Task GetClientToGroup(string roomName)
+        {
+            Group group = GroupSource.Groups.FirstOrDefault(x => x.GroupName == roomName);
+
+            await Clients.Caller.SendAsync("clients", roomName == "-1" ? ClientSource.Clients : group.Clients);
+        }
+
+        public async Task SendMessageToGroupAsync(string groupName, string message)
+        {
+            await Clients.Group(groupName).SendAsync("receiveMessage", message, ClientSource.Clients.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId).NickName);
         }
     }
 }
